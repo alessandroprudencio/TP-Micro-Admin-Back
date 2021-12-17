@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { Ctx, EventPattern, MessagePattern, Payload, RmqContext, RpcException } from '@nestjs/microservices';
+import { generate } from 'generate-password';
 import { AwsCognitoService } from 'src/aws/aws-cognito.service';
 import { AwsS3Service } from 'src/aws/aws-s3.service';
 import { ClientProxyRabbitMq } from 'src/proxyrmq/client-proxy';
@@ -11,7 +12,7 @@ const ackErrors: string[] = ['E11000'];
 
 @Controller('api/v1/players')
 export class PlayersController {
-  private clientRabbitMQChallenge = this.clientProxy.getClientProxyAdmin('micro-challenge-back');
+  private clientRabbitMQChallenge = this.clientProxy.getClientProxyRabbitmq('micro-challenge-back');
 
   constructor(
     private cognito: AwsCognitoService,
@@ -28,6 +29,8 @@ export class PlayersController {
 
     try {
       return await this.playerService.findAll(name);
+    } catch (error) {
+      throw new RpcException(error.message);
     } finally {
       await channel.ack(originalMsg);
     }
@@ -43,18 +46,23 @@ export class PlayersController {
       /*
         IF NO PASSWORD IS BEING CREATED BY AN ADMIN, THEN WILL NOT BE CREATED USER ONLY ONE PLAYER
       */
-      if (createPlayerDto.password) {
-        const authRegisterDto = {
-          name: createPlayerDto.name,
-          email: createPlayerDto.email,
-          password: createPlayerDto.password,
-          phoneNumber: createPlayerDto.phoneNumber,
-        };
 
-        const userCognito = await this.cognito.register(authRegisterDto);
+      const password = generate({
+        length: 12,
+        numbers: true,
+        uppercase: true,
+      });
 
-        createPlayerDto.cognitoId = userCognito.userSub;
-      }
+      const authRegisterDto = {
+        name: createPlayerDto.name,
+        email: createPlayerDto.email,
+        password: createPlayerDto.password || password,
+        phoneNumber: createPlayerDto.phoneNumber,
+      };
+
+      const userCognito = await this.cognito.register(authRegisterDto);
+
+      createPlayerDto.cognitoId = userCognito.userSub;
 
       const avatar = createPlayerDto.avatar;
 
@@ -81,14 +89,13 @@ export class PlayersController {
 
       return resp;
     } catch (error) {
-      // const filterAckErrors = ackErrors.filter((ackError) => error.message.includes(ackError));
+      const filterAckErrors = ackErrors.filter((ackError) => error.message.includes(ackError));
 
-      // if (filterAckErrors) {
-      //   await channel.ack(originalMsg);
-      // }
+      if (filterAckErrors) {
+        await channel.ack(originalMsg);
+      }
+
       throw new RpcException(error.message);
-    } finally {
-      await channel.ack(originalMsg);
     }
   }
 
@@ -100,6 +107,8 @@ export class PlayersController {
 
     try {
       return await this.playerService.findOne(id);
+    } catch (error) {
+      throw new RpcException(error.message);
     } finally {
       channel.ack(originalMsg);
     }
@@ -163,6 +172,8 @@ export class PlayersController {
 
     try {
       await this.playerService.delete(id);
+    } catch (error) {
+      throw new RpcException(error.message);
     } finally {
       await channel.ack(originalMsg);
     }
@@ -180,6 +191,8 @@ export class PlayersController {
       if (upload) {
         await this.playerService.update(id, { avatar: upload.Location });
       }
+    } catch (error) {
+      throw new RpcException(error.message);
     } finally {
       await channel.ack(originalMsg);
     }

@@ -1,5 +1,5 @@
 import { Controller, InternalServerErrorException } from '@nestjs/common';
-import { Ctx, EventPattern, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
+import { Ctx, EventPattern, MessagePattern, Payload, RmqContext, RpcException } from '@nestjs/microservices';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { ICategory } from './interfaces/category.interface';
@@ -18,6 +18,8 @@ export class CategoriesController {
 
     try {
       return await this.categoryService.findAll(name);
+    } catch (error) {
+      throw new RpcException(error.message);
     } finally {
       await channel.ack(originalMsg);
     }
@@ -54,6 +56,8 @@ export class CategoriesController {
 
     try {
       return await this.categoryService.findOne(id);
+    } catch (error) {
+      throw new RpcException(error.message);
     } finally {
       channel.ack(originalMsg);
     }
@@ -92,6 +96,8 @@ export class CategoriesController {
 
     try {
       await this.categoryService.delete(id);
+    } catch (error) {
+      throw new RpcException(error.message);
     } finally {
       await channel.ack(originalMsg);
     }
