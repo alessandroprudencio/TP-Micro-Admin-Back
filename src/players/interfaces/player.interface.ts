@@ -5,9 +5,9 @@ export interface IPlayer extends Document {
   phoneNumber: string;
   email: string;
   name: string;
-  ranking: string;
-  positionRanking: number;
   avatar: string;
   category: ICategory;
   cognitoId?: string;
+  score: number;
+  positionRanking: number;
 }

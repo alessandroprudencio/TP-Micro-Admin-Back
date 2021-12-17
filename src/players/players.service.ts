@@ -48,7 +48,7 @@ export class PlayersService {
   async findAll(email?: string): Promise<IPlayer[]> {
     if (email) return await this.playerModel.find({ email: email });
 
-    return await this.playerModel.find().populate('category', '_id name description');
+    return await this.playerModel.find().populate('category', '_id name description score');
   }
 
   async delete(id: string): Promise<void> {

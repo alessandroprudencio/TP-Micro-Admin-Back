@@ -15,6 +15,9 @@ export class Category {
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }] })
   players: Array<Player>;
+
+  @Prop({ required: true })
+  score: number;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ICategory } from 'src/categories/interfaces/category.interface';
 
 export class UpdatePlayerDto {
@@ -14,4 +14,10 @@ export class UpdatePlayerDto {
 
   @IsNotEmpty()
   category?: ICategory;
+
+  @IsOptional()
+  score?: number;
+
+  @IsOptional()
+  positionRanking?: number;
 }

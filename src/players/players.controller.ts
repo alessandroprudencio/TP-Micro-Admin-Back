@@ -197,4 +197,29 @@ export class PlayersController {
       await channel.ack(originalMsg);
     }
   }
+
+  @EventPattern('update-positions-rankings')
+  async updatePositionRanking(@Payload() updatePositionsRankigs: any, @Ctx() context: RmqContext) {
+    const channel = context.getChannelRef();
+
+    const originalMsg = context.getMessage();
+
+    try {
+      for await (const iterator of updatePositionsRankigs) {
+        const { _id, score, positionRanking } = iterator;
+
+        await this.playerService.update(_id, { score, positionRanking });
+      }
+
+      await channel.ack(originalMsg);
+    } catch (error) {
+      const filterAckErrors = ackErrors.filter((ackError) => error.message.includes(ackError));
+
+      if (filterAckErrors) {
+        await channel.ack(originalMsg);
+      }
+
+      throw new RpcException(error.message);
+    }
+  }
 }
