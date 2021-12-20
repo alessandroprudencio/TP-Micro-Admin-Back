@@ -20,4 +20,8 @@ export class UpdatePlayerDto {
 
   @IsOptional()
   positionRanking?: number;
+
+  @IsString()
+  @IsOptional()
+  cognitoId?: string;
 }

@@ -25,7 +25,7 @@ export class Player {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Category' })
   category: ICategory;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   cognitoId: string;
 
   @Prop()

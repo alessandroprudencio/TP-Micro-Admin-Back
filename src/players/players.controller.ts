@@ -47,6 +47,12 @@ export class PlayersController {
         IF NO PASSWORD IS BEING CREATED BY AN ADMIN, THEN WILL NOT BE CREATED USER ONLY ONE PLAYER
       */
 
+      const avatar = createPlayerDto.avatar;
+
+      delete createPlayerDto.avatar;
+
+      const resp = await this.playerService.create(createPlayerDto);
+
       const password = generate({
         length: 12,
         numbers: true,
@@ -58,17 +64,12 @@ export class PlayersController {
         email: createPlayerDto.email,
         password: createPlayerDto.password || password,
         phoneNumber: createPlayerDto.phoneNumber,
+        id: resp._id.toString(),
       };
 
       const userCognito = await this.cognito.register(authRegisterDto);
 
-      createPlayerDto.cognitoId = userCognito.userSub;
-
-      const avatar = createPlayerDto.avatar;
-
-      delete createPlayerDto.avatar;
-
-      const resp = await this.playerService.create(createPlayerDto);
+      await this.playerService.update(resp._id, { cognitoId: userCognito.userSub });
 
       await channel.ack(originalMsg);
 
