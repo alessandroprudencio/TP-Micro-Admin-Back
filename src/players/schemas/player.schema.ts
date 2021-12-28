@@ -33,6 +33,9 @@ export class Player {
 
   @Prop({ required: false })
   score: number;
+
+  @Prop({ required: false })
+  pushToken: string;
 }
 
 export const PlayerSchema = SchemaFactory.createForClass(Player);

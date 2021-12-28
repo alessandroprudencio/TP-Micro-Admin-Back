@@ -12,14 +12,19 @@ const ackErrors: string[] = ['E11000'];
 
 @Controller('api/v1/players')
 export class PlayersController {
-  private clientRabbitMQChallenge = this.clientProxy.getClientProxyRabbitmq('micro-challenge-back');
-
   constructor(
     private cognito: AwsCognitoService,
     private playerService: PlayersService,
     private awsS3Service: AwsS3Service,
     private clientProxy: ClientProxyRabbitMq,
-  ) {}
+  ) {
+    this.cognito = cognito;
+    this.playerService = playerService;
+    this.awsS3Service = awsS3Service;
+    this.clientProxy = clientProxy;
+  }
+
+  private clientRabbitMQChallenge = this.clientProxy.getClientProxyRabbitmq('micro-challenge-back');
 
   @MessagePattern('find-all-player')
   async findAll(@Payload() name: string, @Ctx() context: RmqContext): Promise<IPlayer[]> {
@@ -78,8 +83,16 @@ export class PlayersController {
         this.clientRabbitMQChallenge.emit('create-player', resp);
       }
 
+      console.log('tem avatar=>', avatar);
+      console.log('tipo do avatar=>', typeof avatar);
+
       if (avatar) {
-        const upload = await this.awsS3Service.uploadFile(avatar);
+        let upload: any;
+
+        if (typeof avatar === 'object') upload = await this.awsS3Service.uploadFile(avatar);
+        else if (typeof avatar === 'string') upload.Location = avatar;
+
+        console.log('upload=>', upload);
 
         if (upload) {
           const player = await this.playerService.update(resp._id, { avatar: upload.Location });
@@ -134,6 +147,7 @@ export class PlayersController {
 
       if (resp.avatar) {
         // remove avatar from s3
+        // eslint-disable-next-line no-useless-escape
         const keyFile = resp.avatar.replace(/^.*[\\\/]/, '');
 
         await this.awsS3Service.deleteFile(keyFile);
@@ -221,6 +235,25 @@ export class PlayersController {
       }
 
       throw new RpcException(error.message);
+    }
+  }
+
+  @EventPattern('set-push-token')
+  async setPushToken(@Payload() updatePushToken: any, @Ctx() context: RmqContext) {
+    const channel = context.getChannelRef();
+
+    const originalMsg = context.getMessage();
+
+    try {
+      const { id, pushToken } = updatePushToken;
+
+      console.log('pushToken=>', pushToken);
+
+      await this.playerService.update(id, { pushToken });
+    } catch (error) {
+      throw new RpcException(error.message);
+    } finally {
+      await channel.ack(originalMsg);
     }
   }
 }

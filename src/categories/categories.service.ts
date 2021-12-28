@@ -12,7 +12,9 @@ export class CategoriesService {
   constructor(
     @InjectModel(Category.name)
     private readonly categoryModel: Model<CategoryDocument>,
-  ) {}
+  ) {
+    this.categoryModel = categoryModel;
+  }
 
   async create(createCategoryDto: CreateCategoryDto): Promise<ICategory> {
     try {

@@ -1,5 +1,6 @@
 import { IsEmail, IsMobilePhone, IsNotEmpty, IsObject, IsOptional, IsString, Matches } from 'class-validator';
 import { ICategory } from 'src/categories/interfaces/category.interface';
+import { Express } from 'express';
 
 export class CreatePlayerDto {
   @IsMobilePhone('pt-BR')

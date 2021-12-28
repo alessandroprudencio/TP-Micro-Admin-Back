@@ -3,7 +3,9 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AwsCognitoConfig {
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) {
+    this.configService = configService;
+  }
 
   public userPoolId: string = this.configService.get<string>('AWS_COGNITO_USER_POOL_ID');
   public clientId: string = this.configService.get<string>('AWS_COGNITO_CLIENT_ID');

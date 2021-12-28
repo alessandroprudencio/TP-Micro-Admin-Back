@@ -6,15 +6,13 @@ import { AwsCognitoConfig } from './aws-cognito.config';
 @Injectable()
 export class AwsCognitoService {
   private userPool: CognitoUserPool;
-  // private cognito: CognitoIdentityProvider;
-
   constructor(private cognitoConfig: AwsCognitoConfig) {
+    this.cognitoConfig = cognitoConfig;
+
     this.userPool = new CognitoUserPool({
       UserPoolId: this.cognitoConfig.userPoolId,
       ClientId: this.cognitoConfig.clientId,
     });
-
-    // this.cognito = new CognitoIdentityProvider({ region: this.cognitoConfig.region });
   }
 
   register(userDto: any): Promise<ISignUpResult> {
@@ -28,8 +26,23 @@ export class AwsCognitoService {
       attributeList.push(new CognitoUserAttribute({ Name: 'custom:_id', Value: id }));
       // attributeList.push(new CognitoUserAttribute({ Name: 'is_admin', Value: '0' }));
 
-      this.userPool.signUp(email, password, attributeList, null, (err, result) => {
+      this.userPool.signUp(email, password, attributeList, null, async (err, result: ISignUpResult) => {
         if (err) return reject(err);
+
+        try {
+          const params = {
+            GroupName: process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
+            UserPoolId: this.userPool.getUserPoolId(),
+            Username: result.userSub,
+          };
+
+          const cognito = new CognitoIdentityServiceProvider({ region: this.cognitoConfig.region });
+
+          await cognito.adminAddUserToGroup(params).promise();
+        } catch (error) {
+          reject(error);
+        }
+
         return resolve(result);
       });
     });
@@ -44,7 +57,5 @@ export class AwsCognitoService {
         Username: sub,
       })
       .promise();
-
-    console.log('success removed deleteFromAdmin');
   }
 }

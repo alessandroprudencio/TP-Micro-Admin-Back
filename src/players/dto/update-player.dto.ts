@@ -24,4 +24,8 @@ export class UpdatePlayerDto {
   @IsString()
   @IsOptional()
   cognitoId?: string;
+
+  @IsString()
+  @IsOptional()
+  pushToken?: string;
 }

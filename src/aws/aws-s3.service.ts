@@ -61,11 +61,8 @@ export class AwsS3Service {
         accessKeyId: this.s3Config.acessKeyId,
         secretAccessKey: this.s3Config.secretAccessKey,
       });
-      console.log(key);
 
       const result = await s3.deleteObject(params).promise();
-
-      console.log(result);
 
       this.logger.log(`delete file => ${JSON.stringify(result)}`);
     } catch (error) {

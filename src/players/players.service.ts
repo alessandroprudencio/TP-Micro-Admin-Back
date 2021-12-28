@@ -21,7 +21,12 @@ export class PlayersService {
     private readonly playerModel: Model<PlayerDocument>,
 
     private categoriesService: CategoriesService,
-  ) {}
+  ) {
+    this.cognito = cognito;
+    this.awsS3Service = awsS3Service;
+    this.categoriesService = categoriesService;
+    this.playerModel = playerModel;
+  }
 
   async create(createPlayerDto: CreatePlayerDto): Promise<IPlayer> {
     try {
@@ -61,9 +66,12 @@ export class PlayersService {
       if (player.cognitoId) await this.cognito.deleteFromAdmin(player.cognitoId);
 
       // remove avatar from s3
-      const keyFile = player.avatar.replace(/^.*[\\\/]/, '');
+      if (player.avatar) {
+        // eslint-disable-next-line no-useless-escape
+        const keyFile = player.avatar.replace(/^.*[\\\/]/, '');
 
-      this.awsS3Service.deleteFile(keyFile);
+        this.awsS3Service.deleteFile(keyFile);
+      }
 
       // remove user from db
       await this.playerModel.deleteOne({ _id: id });
@@ -76,7 +84,6 @@ export class PlayersService {
     try {
       return await this.playerModel.findById(id).populate('category', '_id name description');
     } catch (error) {
-      console.log('entrou no erro');
       throw new BadRequestException(error.message);
     }
   }
